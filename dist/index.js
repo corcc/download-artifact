@@ -34,7 +34,7 @@ module.exports =
 /******/ 	// the startup function
 /******/ 	function startup() {
 /******/ 		// Load entry module and return exports
-/******/ 		return __webpack_require__(799);
+/******/ 		return __webpack_require__(131);
 /******/ 	};
 /******/
 /******/ 	// run startup
@@ -454,6 +454,64 @@ rimraf.sync = rimrafSync
 /***/ (function(module) {
 
 module.exports = require("tls");
+
+/***/ }),
+
+/***/ 21:
+/***/ (function(module) {
+
+"use strict";
+
+
+function parseStatus(str) {
+	var chunks = str.split('\0');
+	var ret = [];
+	for (var i = 0; i < chunks.length; i++) {
+		var chunk = chunks[i];
+		if (chunk.length) {
+			var x = chunk[0];
+			var fileStatus = {
+				x: x,
+				y: chunk[1],
+				to: chunk.substring(3),
+				from: null
+			};
+			if (x === 'R') {
+				i++;
+				fileStatus.from = chunks[i];
+			}
+			ret.push(fileStatus);
+		}
+	}
+	return ret;
+}
+
+var DESCRIPTIONS = {
+	' ': 'unmodified',
+	'M': 'modified',
+	'A': 'added',
+	'D': 'deleted',
+	'R': 'renamed',
+	'C': 'copied',
+	'U': 'umerged',
+	'?': 'untracked',
+	'!': 'ignored'
+};
+
+function describeCode(code) {
+	return DESCRIPTIONS[code.toUpperCase()];
+}
+
+module.exports = parseStatus;
+module.exports.describeCode = describeCode;
+
+
+/***/ }),
+
+/***/ 34:
+/***/ (function(module) {
+
+module.exports = require("https");
 
 /***/ }),
 
@@ -1815,6 +1873,42 @@ exports.realpath = function realpath(p, cache, cb) {
 
 /***/ }),
 
+/***/ 129:
+/***/ (function(module) {
+
+module.exports = require("child_process");
+
+/***/ }),
+
+/***/ 131:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const command_1 = __webpack_require__(281);
+const download_artifact_1 = __webpack_require__(799);
+const publish_1 = __webpack_require__(446);
+(function () {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield download_artifact_1.download();
+        yield command_1.command();
+        yield publish_1.publish();
+    });
+})();
+
+
+/***/ }),
+
 /***/ 141:
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -1824,7 +1918,7 @@ exports.realpath = function realpath(p, cache, cb) {
 var net = __webpack_require__(631);
 var tls = __webpack_require__(16);
 var http = __webpack_require__(605);
-var https = __webpack_require__(211);
+var https = __webpack_require__(34);
 var events = __webpack_require__(614);
 var assert = __webpack_require__(357);
 var util = __webpack_require__(669);
@@ -2084,6 +2178,157 @@ if (process.env.NODE_DEBUG && /\btunnel\b/.test(process.env.NODE_DEBUG)) {
 }
 exports.debug = debug; // for test
 
+
+/***/ }),
+
+/***/ 145:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+var typpy = __webpack_require__(545),
+    Deffy = __webpack_require__(812);
+
+var Ul = module.exports = {
+    /**
+     * merge
+     * One level merge. Faster than `deepMerge`.
+     *
+     * @name merge
+     * @function
+     * @param dst {Object} The destination object.
+     * @param src {Object} The source object (usually defaults).
+     * @return {Object} The result object.
+     */
+    merge: function merge(dst, src, p) {
+        var res = {};
+
+        src = Deffy(src, {});
+        dst = Deffy(dst, {});
+
+        for (var k in src) {
+            res[k] = src[k];
+        }
+        for (var _k in dst) {
+            if (undefined === dst[_k]) {
+                continue;
+            }
+            res[_k] = dst[_k];
+        }
+
+        return res;
+    }
+
+    /**
+     * deepMerge
+     * Recursively merge the objects from arguments, returning a new object.
+     *
+     * Usage: `Ul.deepMerge(obj1, obj2, obj3, obj4, ..., objN)`
+     *
+     * @name deepMerge
+     * @function
+     * @return {Object} The merged objects.
+     */
+    ,
+    deepMerge: function deepMerge() {
+
+        var dst = {},
+            src = null,
+            p = null,
+            args = [].splice.call(arguments, 0);
+
+        while (args.length > 0) {
+            src = args.splice(-1)[0];
+            if (!typpy(src, Object)) {
+                continue;
+            }
+            for (p in src) {
+                if (!src.hasOwnProperty(p)) {
+                    continue;
+                }
+                if (typpy(src[p], Object)) {
+                    dst[p] = this.deepMerge(src[p], dst[p] || {});
+                } else {
+                    if (src[p] !== undefined) {
+                        dst[p] = src[p];
+                    }
+                }
+            }
+        }
+
+        return dst;
+    }
+
+    /**
+     * clone
+     * Deep clone of the provided item.
+     *
+     * @name clone
+     * @function
+     * @param {Anything} item The item that should be cloned
+     * @return {Anything} The cloned object
+     */
+    ,
+    clone: function clone(item) {
+
+        if (!item) {
+            return item;
+        }
+
+        var types = [Number, String, Boolean],
+            result = undefined;
+
+        for (var _i = 0; _i < types.length; ++_i) {
+            var type = types[_i];
+            if (item instanceof type) {
+                result = type(item);
+            }
+        }
+
+        if (typeof result == "undefined") {
+            if (Array.isArray(item)) {
+                result = [];
+                for (var i = 0; i < item.length; ++i) {
+                    result[i] = this.clone(item[i]);
+                }
+            } else if ((typeof item === "undefined" ? "undefined" : _typeof(item)) == "object") {
+                if (!item.prototype) {
+                    if (item instanceof Date) {
+                        result = new Date(item);
+                    } else {
+                        result = {};
+                        for (i in item) {
+                            result[i] = this.clone(item[i]);
+                        }
+                    }
+                } else {
+                    result = item;
+                }
+            } else {
+                result = item;
+            }
+        }
+
+        return result;
+    },
+    HOME_DIR: process.env[process.platform == "win32" ? "USERPROFILE" : "HOME"]
+
+    /**
+     * home
+     * Get the home directory path on any platform. The value can be
+     * accessed using `Ul.HOME_DIR` too.
+     *
+     * @name home
+     * @function
+     * @return {String} The home directory path.
+     */
+    , home: function home() {
+        return this.HOME_DIR;
+    }
+};
 
 /***/ }),
 
@@ -2933,9 +3178,29 @@ exports.StatusReporter = StatusReporter;
 /***/ }),
 
 /***/ 211:
-/***/ (function(module) {
+/***/ (function(__unusedmodule, exports) {
 
-module.exports = require("https");
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var Inputs;
+(function (Inputs) {
+    Inputs["ArtifactName"] = "artifact-name";
+    Inputs["ArtifactPath"] = "artifact-path";
+    Inputs["CommitMessage"] = "commit-message";
+    Inputs["GITHUB_ACTOR"] = "GITHUB_ACTOR";
+    Inputs["GITHUB_TOKEN"] = "GITHUB_TOKEN";
+    Inputs["GITHUB_REPOSITORY"] = "GITHUB_REPOSITORY";
+    Inputs["BRANCH_NAME"] = "BRANCH_NAME";
+    Inputs["RunCommand"] = "command";
+    Inputs["TimeZone"] = "TIMEZONE";
+    Inputs["GITHUB_SHA"] = "GITHUB_SHA";
+})(Inputs = exports.Inputs || (exports.Inputs = {}));
+var Outputs;
+(function (Outputs) {
+    Outputs["DownloadPath"] = "download-path";
+})(Outputs = exports.Outputs || (exports.Outputs = {}));
+
 
 /***/ }),
 
@@ -3020,6 +3285,16 @@ class PersonalAccessTokenCredentialHandler {
 }
 exports.PersonalAccessTokenCredentialHandler = PersonalAccessTokenCredentialHandler;
 
+
+/***/ }),
+
+/***/ 234:
+/***/ (function(module) {
+
+"use strict";
+
+
+module.exports = function () {};
 
 /***/ }),
 
@@ -3516,6 +3791,102 @@ GlobSync.prototype._makeAbs = function (f) {
 
 /***/ }),
 
+/***/ 269:
+/***/ (function(module) {
+
+"use strict";
+
+
+/**
+ * procOutput
+ * Get the output of a process.
+ *
+ * @name procOutput
+ * @function
+ * @param {Process} proc The process object.
+ * @param {Function} cb The callback function.
+ * @returns {Process} The process object.
+ */
+
+module.exports = function procOutput(proc, cb) {
+    var stdout = "",
+        stderr = "";
+
+    proc.on("error", function (err) {
+        cb(err);
+    });
+
+    proc.stdout.on("data", function (chunk) {
+        return stdout += chunk;
+    });
+    proc.stderr.on("data", function (chunk) {
+        return stderr += chunk;
+    });
+    proc.on("close", function (code) {
+        return cb(null, stdout, stderr, code);
+    });
+
+    return proc;
+};
+
+/***/ }),
+
+/***/ 281:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const core = __importStar(__webpack_require__(470));
+const constants_1 = __webpack_require__(211);
+const child_process_1 = __webpack_require__(129);
+function command() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const getV = function (name) {
+                const fromEnv = function () {
+                    return child_process_1.execSync(`echo $${name}`).toString();
+                };
+                let _a;
+                try {
+                    _a = core.getInput(constants_1.Inputs[name], { required: false });
+                }
+                catch (e) {
+                    core.warning(e);
+                    _a = fromEnv();
+                }
+                _a = _a ? _a : fromEnv();
+                return _a;
+            };
+            const RunCommand = getV('RunCommand');
+            core.info(child_process_1.execSync(RunCommand).toString());
+        }
+        catch (err) {
+            core.setFailed(err.message);
+        }
+    });
+}
+exports.command = command;
+
+
+/***/ }),
+
 /***/ 302:
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -3828,6 +4199,48 @@ if (typeof Object.create === 'function') {
   }
 }
 
+
+/***/ }),
+
+/***/ 322:
+/***/ (function(module) {
+
+"use strict";
+
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+/**
+ * iterateObject
+ * Iterates an object. Note the object field order may differ.
+ *
+ * @name iterateObject
+ * @function
+ * @param {Object} obj The input object.
+ * @param {Function} fn A function that will be called with the current value, field name and provided object.
+ * @return {Function} The `iterateObject` function.
+ */
+function iterateObject(obj, fn) {
+    var i = 0,
+        keys = [];
+
+    if (Array.isArray(obj)) {
+        for (; i < obj.length; ++i) {
+            if (fn(obj[i], i, obj) === false) {
+                break;
+            }
+        }
+    } else if ((typeof obj === "undefined" ? "undefined" : _typeof(obj)) === "object" && obj !== null) {
+        keys = Object.keys(obj);
+        for (; i < keys.length; ++i) {
+            if (fn(obj[keys[i]], keys[i], obj) === false) {
+                break;
+            }
+        }
+    }
+}
+
+module.exports = iterateObject;
 
 /***/ }),
 
@@ -4985,6 +5398,93 @@ function escapeProperty(s) {
 
 /***/ }),
 
+/***/ 446:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const core = __importStar(__webpack_require__(470));
+const constants_1 = __webpack_require__(211);
+const git_status_1 = __importDefault(__webpack_require__(737));
+const child_process_1 = __webpack_require__(129);
+function publish() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const getV = function (name) {
+                const fromEnv = function () {
+                    return child_process_1.execSync(`echo $${name}`).toString();
+                };
+                let _a;
+                try {
+                    _a = core.getInput(constants_1.Inputs[name], { required: false });
+                }
+                catch (e) {
+                    core.warning(e);
+                    _a = fromEnv();
+                }
+                _a = _a ? _a : fromEnv();
+                return _a;
+            };
+            const CommitMessage = getV('CommitMessage');
+            const GITHUB_ACTOR = getV('GITHUB_ACTOR');
+            const GITHUB_TOKEN = getV('GITHUB_TOKEN');
+            const GITHUB_REPOSITORY = getV('GITHUB_REPOSITORY');
+            const GITHUB_SHA = getV('GITHUB_SHA');
+            const REMOTE_REPO = `https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git`;
+            const BRANCH_NAME = getV('BRANCH_NAME');
+            let TIMEZONE = getV('TIMEZONE');
+            TIMEZONE = TIMEZONE ? TIMEZONE : 'Asia/Tokyo';
+            process.env.TZ = TIMEZONE;
+            git_status_1.default(git_status_1.default.parseWithLineEndingWarnings((err, data) => {
+                if (data) {
+                    core.info(child_process_1.execSync('git config http.sslVerify false').toString());
+                    core.info(child_process_1.execSync('git config user.name "Automated Publisher"').toString());
+                    core.info(child_process_1.execSync('git config user.email "actions@users.noreply.github.com"').toString());
+                    child_process_1.execSync(`git remote add publisher "${REMOTE_REPO}"`).toString();
+                    core.info(child_process_1.execSync('git show - ref').toString());
+                    core.info(child_process_1.execSync('git branch--verbose').toString());
+                    core.info(child_process_1.execSync(`git add .`).toString());
+                    core.info(child_process_1.execSync(`git branch --verbose`).toString());
+                    core.info(child_process_1.execSync(`git checkout "${BRANCH_NAME}"`).toString());
+                    core.info(child_process_1.execSync(`git add -A`).toString());
+                    core.info(child_process_1.execSync(`git commit -m "${CommitMessage} ${child_process_1.execSync(`date`).toString()} ${GITHUB_SHA}" || exit 0`).toString());
+                    core.info(child_process_1.execSync('git pull--rebase').toString());
+                    core.info(child_process_1.execSync(`git pull--rebase publisher "${BRANCH_NAME}"`).toString());
+                    core.info(child_process_1.execSync(`git push publisher "${BRANCH_NAME}"`).toString());
+                }
+                console.log('parseWithLineEndingWarnings\n', err || data);
+            }));
+        }
+        catch (err) {
+            core.setFailed(err.message);
+        }
+    });
+}
+exports.publish = publish;
+
+
+/***/ }),
+
 /***/ 452:
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -5268,6 +5768,68 @@ exports.getState = getState;
 
 /***/ }),
 
+/***/ 480:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+var spawn = __webpack_require__(129).spawn,
+    procOutput = __webpack_require__(269);
+
+/**
+ * spawno
+ * Creates the child process.
+ *
+ * @name spawno
+ * @function
+ * @param {String} command The command you want to run.
+ * @param {Array} args The command arguments.
+ * @param {Object} options The options to pass to the `spawn` function extended with:
+ *
+ *  - `_showOutput` (Boolean): If truly, the output will be piped in the
+ *    process stdout/stderr streams.
+ *
+ * @param {Function} cb The callback function.
+ * @returns {Process} The child process that was created.
+ */
+module.exports = function spawno(command, args, options, cb) {
+
+    if (typeof args === "function") {
+        cb = args;
+        args = [];
+        options = {};
+    }
+
+    if (typeof options === "function") {
+        cb = options;
+        if (!Array.isArray(args)) {
+            options = args;
+            args = [];
+        } else {
+            options = {};
+        }
+    }
+
+    var showOutput = options._showOutput;
+    delete options._showOutput;
+
+    var proc = spawn(command, args, options);
+
+    if (showOutput) {
+        proc.stdout.pipe(process.stdout);
+        proc.stderr.pipe(process.stderr);
+    }
+
+    if (cb) {
+        procOutput(proc, cb);
+    }
+
+    return proc;
+};
+
+/***/ }),
+
 /***/ 489:
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -5425,7 +5987,7 @@ exports.getDownloadSpecification = getDownloadSpecification;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 const http = __webpack_require__(605);
-const https = __webpack_require__(211);
+const https = __webpack_require__(34);
 const pm = __webpack_require__(950);
 let tunnel;
 var HttpCodes;
@@ -5960,6 +6522,99 @@ class HttpClient {
 }
 exports.HttpClient = HttpClient;
 
+
+/***/ }),
+
+/***/ 545:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+__webpack_require__(736);
+
+/**
+ * Typpy
+ * Gets the type of the input value or compares it
+ * with a provided type.
+ *
+ * Usage:
+ *
+ * ```js
+ * Typpy({}) // => "object"
+ * Typpy(42, Number); // => true
+ * Typpy.get([], "array"); => true
+ * ```
+ *
+ * @name Typpy
+ * @function
+ * @param {Anything} input The input value.
+ * @param {Constructor|String} target The target type.
+ * It could be a string (e.g. `"array"`) or a
+ * constructor (e.g. `Array`).
+ * @return {String|Boolean} It returns `true` if the
+ * input has the provided type `target` (if was provided),
+ * `false` if the input type does *not* have the provided type
+ * `target` or the stringified type of the input (always lowercase).
+ */
+function Typpy(input, target) {
+    if (arguments.length === 2) {
+        return Typpy.is(input, target);
+    }
+    return Typpy.get(input, true);
+}
+
+/**
+ * Typpy.is
+ * Checks if the input value has a specified type.
+ *
+ * @name Typpy.is
+ * @function
+ * @param {Anything} input The input value.
+ * @param {Constructor|String} target The target type.
+ * It could be a string (e.g. `"array"`) or a
+ * constructor (e.g. `Array`).
+ * @return {Boolean} `true`, if the input has the same
+ * type with the target or `false` otherwise.
+ */
+Typpy.is = function (input, target) {
+    return Typpy.get(input, typeof target === "string") === target;
+};
+
+/**
+ * Typpy.get
+ * Gets the type of the input value. This is used internally.
+ *
+ * @name Typpy.get
+ * @function
+ * @param {Anything} input The input value.
+ * @param {Boolean} str A flag to indicate if the return value
+ * should be a string or not.
+ * @return {Constructor|String} The input value constructor
+ * (if any) or the stringified type (always lowercase).
+ */
+Typpy.get = function (input, str) {
+
+    if (typeof input === "string") {
+        return str ? "string" : String;
+    }
+
+    if (null === input) {
+        return str ? "null" : null;
+    }
+
+    if (undefined === input) {
+        return str ? "undefined" : undefined;
+    }
+
+    if (input !== input) {
+        return str ? "nan" : NaN;
+    }
+
+    return str ? input.constructor.name.toLowerCase() : input.constructor;
+};
+
+module.exports = Typpy;
 
 /***/ }),
 
@@ -6863,22 +7518,107 @@ try {
 
 /***/ }),
 
-/***/ 694:
-/***/ (function(__unusedmodule, exports) {
+/***/ 736:
+/***/ (function(module, __unusedexports, __webpack_require__) {
 
 "use strict";
 
-Object.defineProperty(exports, "__esModule", { value: true });
-var Inputs;
-(function (Inputs) {
-    Inputs["Name"] = "name";
-    Inputs["Path"] = "path";
-})(Inputs = exports.Inputs || (exports.Inputs = {}));
-var Outputs;
-(function (Outputs) {
-    Outputs["DownloadPath"] = "download-path";
-})(Outputs = exports.Outputs || (exports.Outputs = {}));
 
+var noop6 = __webpack_require__(234);
+
+(function () {
+    var NAME_FIELD = "name";
+
+    if (typeof noop6.name === "string") {
+        return;
+    }
+
+    try {
+        Object.defineProperty(Function.prototype, NAME_FIELD, {
+            get: function get() {
+                var nameMatch = this.toString().trim().match(/^function\s*([^\s(]+)/);
+                var name = nameMatch ? nameMatch[1] : "";
+                Object.defineProperty(this, NAME_FIELD, { value: name });
+                return name;
+            }
+        });
+    } catch (e) {}
+})();
+
+/**
+ * functionName
+ * Get the function name.
+ *
+ * @name functionName
+ * @function
+ * @param {Function} input The input function.
+ * @returns {String} The function name.
+ */
+module.exports = function functionName(input) {
+    return input.name;
+};
+
+/***/ }),
+
+/***/ 737:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+var spawno = __webpack_require__(480),
+    oargv = __webpack_require__(847),
+    parse = __webpack_require__(21);
+
+/**
+ * gitStatus
+ * A git-status wrapper.
+ *
+ * [`parse-git-status`](https://github.com/jamestalmage/parse-git-status) is used to parse the output.
+ *
+ * @name gitStatus
+ * @function
+ * @param {Object} options The `spawno` options.
+ * @param {Function} cb The callback function.
+ */
+function gitStatus(options, cb) {
+    if (typeof options === "function") {
+        cb = options;
+        options = {};
+    }
+
+    spawno("git", ["status", "--porcelain", "-z"], options, function (err, stdout, stderr) {
+        if (err || stderr) {
+            return cb(err || stderr, stdout);
+        }
+        cb(null, parse(stdout));
+    });
+}
+
+/**
+ * Ignores LF to CRLF warnings and gives parsed status info
+ * @param cb {Function}
+ */
+gitStatus.parseWithLineEndingWarnings = function (cb) {
+    return function (err, result) {
+        var showStderr = err;
+        if (err && typeof err === 'string') {
+            var stderrLines = err.trim().split(/\n/);
+            var warningsAfterFilter = stderrLines.filter(function (line) {
+                return line !== 'The file will have its original line endings in your working directory.' && !line.startsWith('warning: LF will be replaced by CRLF in');
+            });
+            showStderr = warningsAfterFilter.length;
+            err = new Error(err);
+            result = parse(result);
+        }
+        if (showStderr) {
+            return cb(err);
+        }
+        cb(null, result);
+    };
+};
+
+module.exports = gitStatus;
 
 /***/ }),
 
@@ -6922,27 +7662,28 @@ const core = __importStar(__webpack_require__(470));
 const artifact = __importStar(__webpack_require__(214));
 const os = __importStar(__webpack_require__(87));
 const path_1 = __webpack_require__(622);
-const constants_1 = __webpack_require__(694);
-function run() {
+const constants_1 = __webpack_require__(211);
+function download() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const name = core.getInput(constants_1.Inputs.Name, { required: false });
-            const path = core.getInput(constants_1.Inputs.Path, { required: false });
-            let resolvedPath;
-            // resolve tilde expansions, path.replace only replaces the first occurrence of a pattern
-            if (path.startsWith(`~`)) {
-                resolvedPath = path_1.resolve(path.replace('~', os.homedir()));
+            const ArtifactName = core.getInput(constants_1.Inputs.ArtifactName, { required: true });
+            const ArtifactPath = core.getInput(constants_1.Inputs.ArtifactPath, { required: true });
+            // const ArtifactPath = core.getInput(Inputs.Path, {required: false})
+            let resolvedArtifactPath;
+            // resolve tilde expansions, ArtifactPath.replace only replaces the first occurrence of a pattern
+            if (ArtifactPath.startsWith(`~`)) {
+                resolvedArtifactPath = path_1.resolve(ArtifactPath.replace('~', os.homedir()));
             }
             else {
-                resolvedPath = path_1.resolve(path);
+                resolvedArtifactPath = path_1.resolve(ArtifactPath);
             }
-            core.debug(`Resolved path is ${resolvedPath}`);
+            core.debug(`Resolved ArtifactPath is ${resolvedArtifactPath}`);
             const artifactClient = artifact.create();
-            if (!name) {
+            if (!ArtifactName) {
                 // download all artifacts
-                core.info('No artifact name specified, downloading all artifacts');
+                core.info('No artifact ArtifactName specified, downloading all artifacts');
                 core.info('Creating an extra directory for each artifact that is being downloaded');
-                const downloadResponse = yield artifactClient.downloadAllArtifacts(resolvedPath);
+                const downloadResponse = yield artifactClient.downloadAllArtifacts(resolvedArtifactPath);
                 core.info(`There were ${downloadResponse.length} artifacts downloaded`);
                 for (const artifact of downloadResponse) {
                     core.info(`Artifact ${artifact.artifactName} was downloaded to ${artifact.downloadPath}`);
@@ -6950,16 +7691,16 @@ function run() {
             }
             else {
                 // download a single artifact
-                core.info(`Starting download for ${name}`);
+                core.info(`Starting download for ${ArtifactName}`);
                 const downloadOptions = {
                     createArtifactFolder: false
                 };
-                const downloadResponse = yield artifactClient.downloadArtifact(name, resolvedPath, downloadOptions);
+                const downloadResponse = yield artifactClient.downloadArtifact(ArtifactName, resolvedArtifactPath, downloadOptions);
                 core.info(`Artifact ${downloadResponse.artifactName} was downloaded to ${downloadResponse.downloadPath}`);
             }
             // output the directory that the artifact(s) was/were downloaded to
-            // if no path is provided, an empty string resolves to the current working directory
-            core.setOutput(constants_1.Outputs.DownloadPath, resolvedPath);
+            // if no ArtifactPath is provided, an empty string resolves to the current working directory
+            core.setOutput(constants_1.Outputs.DownloadPath, resolvedArtifactPath);
             core.info('Artifact download has finished successfully');
         }
         catch (err) {
@@ -6967,8 +7708,64 @@ function run() {
         }
     });
 }
-run();
+exports.download = download;
 
+
+/***/ }),
+
+/***/ 812:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+// Dependencies
+var Typpy = __webpack_require__(545);
+
+/**
+ * Deffy
+ * Computes a final value by providing the input and default values.
+ *
+ * @name Deffy
+ * @function
+ * @param {Anything} input The input value.
+ * @param {Anything|Function} def The default value or a function getting the
+ * input value as first argument.
+ * @param {Object|Boolean} options The `empty` value or an object containing
+ * the following fields:
+ *
+ *  - `empty` (Boolean): Handles the input value as empty field (`input || default`). Default is `false`.
+ *
+ * @return {Anything} The computed value.
+ */
+function Deffy(input, def, options) {
+
+    // Default is a function
+    if (typeof def === "function") {
+        return def(input);
+    }
+
+    options = Typpy(options) === "boolean" ? {
+        empty: options
+    } : {
+        empty: false
+    };
+
+    // Handle empty
+    if (options.empty) {
+        return input || def;
+    }
+
+    // Return input
+    if (Typpy(input) === Typpy(def)) {
+        return input;
+    }
+
+    // Return the default
+    return def;
+}
+
+module.exports = Deffy;
 
 /***/ }),
 
@@ -6976,6 +7773,98 @@ run();
 /***/ (function(module) {
 
 module.exports = require("url");
+
+/***/ }),
+
+/***/ 847:
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+// Dependencies
+var Ul = __webpack_require__(145),
+    IterateObject = __webpack_require__(322);
+
+/**
+ * OArgv
+ * Stringifies the options, building a command.
+ *
+ * @name OArgv
+ * @function
+ * @param {Object} options The options that should be stringified. If it contains
+ * the `_` field, then this should be an `Array` of strings, that representing values
+ * that will be added at the end of the command. The `__` field is the separator (default: `" "`).
+ * @param {String} prgm The program that executes the command (default: `""`).
+ * @param {Boolean} stringify If `true`, the result array will be stringified (default: `false`).
+ * @return {String|Array} The stringified arguments (if `stringify` is `true`) or the array of arguments.
+ */
+var OArgv = module.exports = function (options, prgm, stringify) {
+
+    // Variables
+    var sOpts = [],
+        c = null,
+        escape = JSON.stringify;
+
+    if (typeof prgm === "boolean") {
+        stringify = prgm;
+        prgm = null;
+    }
+
+    // Defaults
+    options = Ul.merge(options, {
+        _: [],
+        __: OArgv.separator
+    });
+
+    if (typeof options._ === "string") {
+        options._ = [options._];
+    }
+
+    // Options
+    IterateObject(options, function (c, k) {
+        if (k === "_" || k === "__") {
+            return;
+        }
+        var cArg = (k.length === 1 ? "-" : "--") + k;
+
+        if (c === true) {
+            sOpts.push(cArg);
+            return;
+        }
+
+        if (typeof c === "string" && !Array.isArray(c)) {
+            c = [c];
+        }
+
+        IterateObject(c, function (cc) {
+            var ccArg = cArg;
+            if (options.__ !== " ") {
+                ccArg += options.__ + cc;
+                sOpts.push(ccArg);
+            } else {
+                sOpts.push(ccArg, cc);
+            }
+        });
+    });
+
+    if (stringify) {
+        return (prgm ? prgm + " " : "") + sOpts.map(function (c) {
+            return escape(c);
+        }).join(" ") + (options._.length ? " " + options._.map(function (c) {
+            return escape(c);
+        }).join(" ") : "");
+    } else {
+        if (typeof prgm === "string") {
+            sOpts.unshift(prgm);
+        }
+        sOpts = sOpts.concat(options._);
+        return sOpts;
+    }
+};
+
+// Defaults
+OArgv.separator = " ";
 
 /***/ }),
 

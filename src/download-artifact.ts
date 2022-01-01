@@ -4,29 +4,30 @@ import * as os from 'os'
 import {resolve} from 'path'
 import {Inputs, Outputs} from './constants'
 
-async function run(): Promise<void> {
+export async function download(): Promise<void> {
   try {
-    const name = core.getInput(Inputs.Name, {required: false})
-    const path = core.getInput(Inputs.Path, {required: false})
+    const ArtifactName = core.getInput(Inputs.ArtifactName, {required: true})
+    const ArtifactPath = core.getInput(Inputs.ArtifactPath, {required: true})
+    // const ArtifactPath = core.getInput(Inputs.Path, {required: false})
 
-    let resolvedPath
-    // resolve tilde expansions, path.replace only replaces the first occurrence of a pattern
-    if (path.startsWith(`~`)) {
-      resolvedPath = resolve(path.replace('~', os.homedir()))
+    let resolvedArtifactPath
+    // resolve tilde expansions, ArtifactPath.replace only replaces the first occurrence of a pattern
+    if (ArtifactPath.startsWith(`~`)) {
+      resolvedArtifactPath = resolve(ArtifactPath.replace('~', os.homedir()))
     } else {
-      resolvedPath = resolve(path)
+      resolvedArtifactPath = resolve(ArtifactPath)
     }
-    core.debug(`Resolved path is ${resolvedPath}`)
+    core.debug(`Resolved ArtifactPath is ${resolvedArtifactPath}`)
 
     const artifactClient = artifact.create()
-    if (!name) {
+    if (!ArtifactName) {
       // download all artifacts
-      core.info('No artifact name specified, downloading all artifacts')
+      core.info('No artifact ArtifactName specified, downloading all artifacts')
       core.info(
         'Creating an extra directory for each artifact that is being downloaded'
       )
       const downloadResponse = await artifactClient.downloadAllArtifacts(
-        resolvedPath
+        resolvedArtifactPath
       )
       core.info(`There were ${downloadResponse.length} artifacts downloaded`)
       for (const artifact of downloadResponse) {
@@ -36,13 +37,13 @@ async function run(): Promise<void> {
       }
     } else {
       // download a single artifact
-      core.info(`Starting download for ${name}`)
+      core.info(`Starting download for ${ArtifactName}`)
       const downloadOptions = {
         createArtifactFolder: false
       }
       const downloadResponse = await artifactClient.downloadArtifact(
-        name,
-        resolvedPath,
+        ArtifactName,
+        resolvedArtifactPath,
         downloadOptions
       )
       core.info(
@@ -50,12 +51,10 @@ async function run(): Promise<void> {
       )
     }
     // output the directory that the artifact(s) was/were downloaded to
-    // if no path is provided, an empty string resolves to the current working directory
-    core.setOutput(Outputs.DownloadPath, resolvedPath)
+    // if no ArtifactPath is provided, an empty string resolves to the current working directory
+    core.setOutput(Outputs.DownloadPath, resolvedArtifactPath)
     core.info('Artifact download has finished successfully')
   } catch (err) {
     core.setFailed(err.message)
   }
 }
-
-run()
